@@ -1,4 +1,4 @@
-import { model, Schema } from "mongoose";
+import { model, Schema } from 'mongoose';
 
 interface ICard {
   name: string;
@@ -24,7 +24,7 @@ const cardSchema = new Schema<ICard>({
   owner: {
     type: Schema.Types.ObjectId,
     required: true,
-    ref: "user",
+    ref: 'user',
   },
   likes: {
     type: [Schema.Types.ObjectId],
@@ -37,4 +37,4 @@ const cardSchema = new Schema<ICard>({
 });
 
 // TS-интерфейс модели Card
-export default model<ICard>("card", cardSchema);
+export default model<ICard>('card', cardSchema);

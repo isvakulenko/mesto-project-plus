@@ -1,4 +1,4 @@
-import { model, Schema } from "mongoose";
+import { model, Schema } from 'mongoose';
 
 interface IUser {
   name: string;
@@ -26,4 +26,4 @@ const userSchema = new Schema<IUser>({
 });
 
 // TS-интерфейс модели User
-export default model<IUser>("user", userSchema);
+export default model<IUser>('user', userSchema);
