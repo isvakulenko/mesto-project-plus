@@ -83,7 +83,9 @@ export const editProfile = (req: TFakeAuth, res: Response) => {
     })
     .then((users) => res.send({ data: users }))
     .catch((err) => {
-      if (err.name === 'CastError') {
+      if (err.name === 'ValidationError') {
+        res.status(NO_VALID_DATA_ERROR).send({ messsage: err.message });
+      } else if (err.name === 'CastError') {
         res
           .status(NO_VALID_DATA_ERROR)
           .send({ message: 'Невалидный формат id пользователя' });
@@ -113,7 +115,9 @@ export const editAvatar = (req: TFakeAuth, res: Response) => {
     })
     .then((users) => res.send({ data: users }))
     .catch((err) => {
-      if (err.name === 'CastError') {
+      if (err.name === 'ValidationError') {
+        res.status(NO_VALID_DATA_ERROR).send({ messsage: err.message });
+      } else if (err.name === 'CastError') {
         res
           .status(NO_VALID_DATA_ERROR)
           .send({ message: 'Невалидный формат id пользователя' });
