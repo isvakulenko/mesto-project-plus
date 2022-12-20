@@ -1,4 +1,5 @@
 import { model, Schema } from 'mongoose';
+import { URLCheck } from '../utils/const';
 
 interface IUser {
   name: string;
@@ -22,6 +23,13 @@ const userSchema = new Schema<IUser>({
   avatar: {
     type: String,
     required: true,
+    validate: {
+      validator(value: string) {
+        // Метод RegExp.test
+        return URLCheck.test(value);
+      },
+      message: 'Неправильный формат  URL', // выводится в случае false
+    },
   },
 });
 

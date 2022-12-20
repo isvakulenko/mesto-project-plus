@@ -1,4 +1,5 @@
 import { model, Schema } from 'mongoose';
+import { URLCheck } from '../utils/const';
 
 interface ICard {
   name: string;
@@ -20,6 +21,13 @@ const cardSchema = new Schema<ICard>({
     type: String, // Ссылка на картинку
     required: true,
     maxlength: 200,
+    validate: {
+      validator(value: string) {
+        // Метод RegExp.test
+        return URLCheck.test(value);
+      },
+      message: 'Неправильный формат  URL', // выводится в случае false
+    },
   },
   owner: {
     type: Schema.Types.ObjectId,
