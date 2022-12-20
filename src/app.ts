@@ -1,12 +1,28 @@
 import express, { Response, NextFunction } from 'express';
+import helmet from 'helmet';
+import rateLimit from 'express-rate-limit';
+import dotenv from 'dotenv';
 import mongoose from 'mongoose';
 import usersRoute from './routes/users';
 import cardsRoute from './routes/cards';
 import { TFakeAuth } from './utils/types';
 
-const { PORT = 3000 } = process.env;
-
 const app = express();
+
+dotenv.config();
+const { PORT = 3000, DB_ADDRESS = 'mongodb://127.0.0.1:27017/mestodb' } = process.env;
+
+const limiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // за 15 минут
+  max: 100, // можно совершить максимум 100 запросов с одного IP
+});
+
+// Apply the rate limiting middleware to all requests
+app.use(limiter);
+
+// Заголовки безопасности Content-Security-Policy
+// можно проставлять автоматически — для этого есть модуль Helmet.
+app.use(helmet());
 
 // для собирания JSON-формата
 app.use(express.json());
@@ -14,7 +30,7 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 // подключаемся к серверу MongoDB
-mongoose.connect('mongodb://127.0.0.1:27017/mestodb');
+mongoose.connect(DB_ADDRESS);
 
 // временное решение авторизации
 app.use((req: TFakeAuth, res: Response, next: NextFunction) => {
