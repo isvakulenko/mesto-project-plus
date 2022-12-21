@@ -6,6 +6,7 @@ import mongoose from 'mongoose';
 import usersRoute from './routes/users';
 import cardsRoute from './routes/cards';
 import { TFakeAuth } from './utils/types';
+import { createUser, login } from './controllers/users';
 
 const app = express();
 
@@ -41,6 +42,8 @@ app.use((req: TFakeAuth, res: Response, next: NextFunction) => {
   next();
 });
 
+app.post('/signin', login);
+app.post('/signup', createUser);
 app.use('/users', usersRoute);
 app.use('/cards', cardsRoute);
 
