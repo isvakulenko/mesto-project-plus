@@ -7,13 +7,16 @@ import {
   NOT_FOUND_ERROR,
   DEFAULT_ERROR,
 } from '../utils/const';
+import bcrypt from 'bcryptjs';
 // -----------------------------------------------------------------------------------
 // возвращает всех пользователей
 export const getUsers = (req: Request, res: Response) => {
   user
     .find({})
     .then((users) => res.send({ data: users }))
-    .catch(() => res.status(DEFAULT_ERROR).send({ message: 'Произошла ошибка' }));
+    .catch(() =>
+      res.status(DEFAULT_ERROR).send({ message: 'Произошла ошибка' })
+    );
 };
 // -----------------------------------------------------------------------------------
 // возвращает пользователя по _id
@@ -50,19 +53,27 @@ export const getUserById = (req: Request, res: Response) => {
 // создаёт пользователя
 export const createUser = (req: Request, res: Response) => {
   // вытащили нужные поля из POST-запроса
-  const { name, about, avatar } = req.body;
+  const { name, about, avatar, email, password } = req.body;
   // передали их объектом в create метод модели
-  user
-    .create({ name, about, avatar })
-    // в случае успеха в user лежит новосозданный в БД объект
-    .then((users) => res.status(201).send({ data: users }))
-    .catch((err) => {
-      // любая ошибка, нужно понять какая, и правильно ответить на фронт
-      if (err.name === 'ValidationError') {
-        res.status(NO_VALID_DATA_ERROR).send({ messsage: err.message });
-      }
-      res.status(DEFAULT_ERROR).send({ message: 'Произошла ошибка' });
-    });
+  // хешируем пароль
+  bcrypt.hash(req.body.password, 10).then((hash: string) =>
+    user
+      .create({
+        email,
+        password: hash, // записываем хеш в базу
+        name,
+        about,
+        avatar,
+      }) // в случае успеха в user лежит новосозданный в БД объект
+      .then((users) => res.status(201).send({ data: users }))
+      .catch((err) => {
+        // любая ошибка, нужно понять какая, и правильно ответить на фронт
+        if (err.name === 'ValidationError') {
+          res.status(NO_VALID_DATA_ERROR).send({ messsage: err.message });
+        }
+        res.status(DEFAULT_ERROR).send({ message: 'Произошла ошибка' });
+      })
+  );
 };
 // -----------------------------------------------------------------------------------
 // обновляет профиль
@@ -74,7 +85,7 @@ export const editProfile = (req: TFakeAuth, res: Response) => {
     .findByIdAndUpdate(
       req.user?._id,
       { name, about },
-      { new: true, runValidators: true },
+      { new: true, runValidators: true }
     )
     .orFail(() => {
       const err = new Error('Пользователь не найден');
@@ -106,7 +117,7 @@ export const editAvatar = (req: TFakeAuth, res: Response) => {
     .findByIdAndUpdate(
       req.user?._id,
       { avatar },
-      { new: true, runValidators: true },
+      { new: true, runValidators: true }
     )
     .orFail(() => {
       const err = new Error('Пользователь не найден');
