@@ -1,8 +1,5 @@
 import { Request } from 'express';
+import { JwtPayload } from 'jsonwebtoken';
 
-// временное решение авторизации
-export type TFakeAuth = Request & {
-  user?: {
-    _id: string;
-  };
-};
+export interface SessionRequest extends Request {
+  user?: string | JwtPayload;}
