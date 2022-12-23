@@ -1,6 +1,8 @@
-import { model, Schema, Document, Model } from 'mongoose';
-import { URLCheck, EMailCheck } from '../utils/const';
+import {
+  model, Schema, Document, Model,
+} from 'mongoose';
 import bcrypt from 'bcryptjs';
+import { URLCheck, EMailCheck } from '../utils/const';
 
 interface IUser {
   name: string;
@@ -21,7 +23,7 @@ const userSchema = new Schema<IUser, UserModel>({
   name: {
     // у пользователя есть имя — опишем требования к имени в схеме:
     type: String, // имя — это строка
-    minlength: 2, //Custom Error Messages?
+    minlength: 2, // Custom Error Messages?
     maxlength: 30,
     default: 'Жак-Ив Кусто',
   },
@@ -57,6 +59,7 @@ const userSchema = new Schema<IUser, UserModel>({
     type: String,
     required: true,
     minlength: 8,
+    select: false, // чтобы API не возвращал хеш пароля
   },
 });
 
@@ -65,11 +68,12 @@ const userSchema = new Schema<IUser, UserModel>({
 // у него будет два параметра — почта и пароль
 userSchema.static(
   'findUserByCredentials',
-  function findUserByCredentials(email: string, password: string) {
-    // Чтобы найти пользователя по почте, нам потребуется метод findOne, которому передадим на вход email.
-    // Метод findOne принадлежит модели User, поэтому обратимся к нему через ключевое слово this:
-    return this.findOne({ email }) // this — это модель user
-      .then((user) => {
+  function findUserByCredentials(this: any, email: string, password: string) {
+    // Чтобы найти пользователя по почте, нам потребуется метод findOne, которому передадим на вход
+    // email. Метод findOne принадлежит модели User, поэтому обратимся к нему через ключевое
+    // слово this:
+    return this.findOne({ email }).select('+password') // this — это модель user. В случае аутентификации хеш пароля нужен
+      .then((user: { password: string; }) => {
         // не нашёлся — отклоняем промис
         if (!user) {
           return Promise.reject(new Error('Неправильные почта или пароль'));
@@ -82,7 +86,7 @@ userSchema.static(
           return user; // теперь user доступен
         });
       });
-  }
+  },
 );
 
 // TS-интерфейс модели User
