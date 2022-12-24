@@ -7,6 +7,7 @@ import usersRoute from './routes/users';
 import cardsRoute from './routes/cards';
 import { createUser, login } from './controllers/users';
 import auth from './middlewares/auth';
+import { requestLogger, errorLogger } from './middlewares/logger';
 
 const app = express();
 
@@ -33,15 +34,9 @@ app.use(express.urlencoded({ extended: true }));
 // подключаемся к серверу MongoDB
 mongoose.connect(DB_ADDRESS);
 
-// // временное решение авторизации
-// app.use((req: TFakeAuth, res: Response, next: NextFunction) => {
-//   req.user = {
-//     // вставьте сюда _id созданного в предыдущем пункте пользователя
-//     _id: '6398acce83ff12ee373db5e6',
-//   };
-//   next();
-// });
-// роуты, не требующие авторизации,
+// подключаем логер запросов
+app.use(requestLogger);
+
 app.post('/signin', login);
 app.post('/signup', createUser);
 // авторизация
@@ -49,6 +44,9 @@ app.use(auth);
 // роуты, которым авторизация нужна
 app.use('/users', usersRoute);
 app.use('/cards', cardsRoute);
+
+// подключаем логер ошибок
+app.use(errorLogger);
 
 app.listen(PORT, () => {
   console.log('Сервер запущен');
