@@ -40,8 +40,8 @@ mongoose.connect(DB_ADDRESS);
 // подключаем логер запросов
 app.use(requestLogger);
 
-app.post('/signin', login);
-app.post('/signup', createUser);
+app.post('/signin', validateAuthentication, login);
+app.post('/signup', validateUserBody, createUser);
 // авторизация
 app.use(auth);
 // роуты, которым авторизация нужна
@@ -52,7 +52,7 @@ app.use('/cards', cardsRoute);
 app.use(errorLogger);
 
 // обработчик ошибок celebrate
-//app.use(errors());
+app.use(errors());
 
 // здесь обрабатываем все ошибки
 app.use(errorsHandler);
