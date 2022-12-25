@@ -1,4 +1,4 @@
-import express, { Request, Response } from 'express';
+import express from 'express';
 import helmet from 'helmet';
 import rateLimit from 'express-rate-limit';
 import dotenv from 'dotenv';
@@ -10,6 +10,7 @@ import { createUser, login } from './controllers/users';
 import auth from './middlewares/auth';
 import { requestLogger, errorLogger } from './middlewares/logger';
 import { validateUserBody, validateAuthentication } from './middlewares/validators';
+import errorsHandler from './middlewares/errors-handler';
 
 const app = express();
 
@@ -39,8 +40,8 @@ mongoose.connect(DB_ADDRESS);
 // подключаем логер запросов
 app.use(requestLogger);
 
-app.post('/signin', validateAuthentication, login);
-app.post('/signup', validateUserBody, createUser);
+app.post('/signin', login);
+app.post('/signup', createUser);
 // авторизация
 app.use(auth);
 // роуты, которым авторизация нужна
@@ -51,30 +52,10 @@ app.use('/cards', cardsRoute);
 app.use(errorLogger);
 
 // обработчик ошибок celebrate
-app.use(errors());
-
-type TError = Error & {
-  statusCode?: number;
-}
+//app.use(errors());
 
 // здесь обрабатываем все ошибки
-app.use((
-  err: TError,
-  req: Request,
-  res: Response,
-) => {
-  // если у ошибки нет статуса, выставляем 500
-  const { statusCode = 500, message } = err;
-
-  res
-    .status(statusCode)
-    .send({
-      // проверяем статус и выставляем сообщение в зависимости от него
-      message: statusCode === 500
-        ? 'На сервере произошла ошибка'
-        : message,
-    });
-});
+app.use(errorsHandler);
 
 app.listen(PORT, () => {
   console.log('Сервер запущен');
