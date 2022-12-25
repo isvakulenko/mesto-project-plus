@@ -2,35 +2,35 @@ import { NextFunction, Request, Response } from 'express';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import user from '../models/users';
-import {
-  NO_VALID_DATA_ERROR,
-  NOT_FOUND_ERROR,
-  DEFAULT_ERROR,
-} from '../utils/const';
 import { SessionRequest } from '../utils/types';
+import NotFoundError from '../errors/not-found-err';
+import InvalidRequestError from '../errors/invalid-request-err';
+import DuplicateError from '../errors/duplicate-err';
 
 const { JWT_SECRET = 'some-secret-key' } = process.env;
 // -----------------------------------------------------------------------------------
 // возвращает всех пользователей
-export const getUsers = (req: Request, res: Response) => {
+export const getUsers = (req: Request, res: Response, next: NextFunction) => {
   user
     .find({})
     .then((users) => res.send({ data: users }))
-    .catch(() => res.status(DEFAULT_ERROR).send({ message: 'Произошла ошибка' }));
+    .catch(next);
 };
 // -----------------------------------------------------------------------------------
 // возвращает пользователя по _id
-export const getUserById = (req: Request, res: Response) => {
+export const getUserById = (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) => {
   const id = req.params.userId;
   user
     .findById(id)
-    .orFail(() => {
+    .orFail(
       // Этот коллбэк сработает, если вы передали валидный id
       // (т.е. правильный по формату монги айдишник), но в базе по нему ничего не найдено
-      const err = new Error('Пользователь не найден');
-      err.name = 'UserNotFoundError'; // или любой другой признак, по которому в catch можно будет определить эту ошибку
-      throw err;
-    })
+      new NotFoundError('Нет пользователя с таким id'),
+    )
     .then((users) => res.send({ data: users }))
     .catch((err) => {
       // Когда условный метод findById(someId) вызывается,
@@ -39,19 +39,14 @@ export const getUserById = (req: Request, res: Response) => {
       // Такое хозяйство может выкинуть ошибку CastError, если someId не удаётся преобразоваться
       // к mongoId. Это нам и нужно поймать и ответить 400 кодом.
       if (err.name === 'CastError') {
-        res
-          .status(NO_VALID_DATA_ERROR)
-          .send({ message: 'Невалидный формат id пользователя1' });
-      } else if (err.name === 'UserNotFoundError') {
-        res.status(NOT_FOUND_ERROR).send({ messsage: err.message });
-      } else {
-        res.status(DEFAULT_ERROR).send({ message: 'Произошла ошибка' });
+        next(new InvalidRequestError('Невалидный формат id пользователя'));
       }
+      next(err);
     });
 };
 // -----------------------------------------------------------------------------------
 // создаёт пользователя
-export const createUser = (req: Request, res: Response) => {
+export const createUser = (req: Request, res: Response, next: NextFunction) => {
   // вытащили нужные поля из POST-запроса
   const {
     name, about, avatar, email, password,
@@ -70,14 +65,22 @@ export const createUser = (req: Request, res: Response) => {
     .catch((err) => {
       // любая ошибка, нужно понять какая, и правильно ответить на фронт
       if (err.name === 'ValidationError') {
-        res.status(NO_VALID_DATA_ERROR).send({ messsage: err.message });
+        next(new InvalidRequestError(err.message));
       }
-      res.status(DEFAULT_ERROR).send({ message: 'Произошла ошибка' });
+      // пользователь пытается зарегистрироваться по уже существующему в базе email
+      else if (err.code === 11000) {
+        next(new DuplicateError('Такой e-mail уже зарегистрирован'));
+      }
+      next(err);
     }));
 };
 // -----------------------------------------------------------------------------------
 // обновляет профиль
-export const editProfile = (req: SessionRequest, res: Response) => {
+export const editProfile = (
+  req: SessionRequest,
+  res: Response,
+  next: NextFunction,
+) => {
   // вытащили нужные поля из PATCH-запроса
   const { name, about } = req.body;
   // передали их объектом в метод модели
@@ -87,61 +90,29 @@ export const editProfile = (req: SessionRequest, res: Response) => {
       { name, about },
       { new: true, runValidators: true },
     )
-    .orFail(() => {
-      const err = new Error('Пользователь не найден');
-      err.name = 'UserNotFoundError';
-      throw err;
-    })
+    .orFail(new NotFoundError('Нет пользователя с таким id'))
     .then((users) => res.send({ data: users }))
-    .catch((err) => {
-      if (err.name === 'ValidationError') {
-        res.status(NO_VALID_DATA_ERROR).send({ messsage: err.message });
-      } else if (err.name === 'CastError') {
-        res
-          .status(NO_VALID_DATA_ERROR)
-          .send({ message: 'Невалидный формат id пользователя' });
-      } else if (err.name === 'UserNotFoundError') {
-        res.status(NOT_FOUND_ERROR).send({ messsage: err.message });
-      } else {
-        res.status(DEFAULT_ERROR).send({ message: 'Произошла ошибка' });
-      }
-    });
+    .catch(next);
 };
 // -----------------------------------------------------------------------------------
 // обновляет аватар
-export const editAvatar = (req: SessionRequest, res: Response) => {
+export const editAvatar = (
+  req: SessionRequest,
+  res: Response,
+  next: NextFunction,
+) => {
   // вытащили нужные поля из PATCH-запроса
   const { avatar } = req.body;
   // передали их объектом в метод модели
   user
-    .findByIdAndUpdate(
-      req.user,
-      { avatar },
-      { new: true, runValidators: true },
-    )
-    .orFail(() => {
-      const err = new Error('Пользователь не найден');
-      err.name = 'UserNotFoundError';
-      throw err;
-    })
+    .findByIdAndUpdate(req.user, { avatar }, { new: true, runValidators: true })
+    .orFail(new NotFoundError('Нет пользователя с таким id'))
     .then((users) => res.send({ data: users }))
-    .catch((err) => {
-      if (err.name === 'ValidationError') {
-        res.status(NO_VALID_DATA_ERROR).send({ messsage: err.message });
-      } else if (err.name === 'CastError') {
-        res
-          .status(NO_VALID_DATA_ERROR)
-          .send({ message: 'Невалидный формат id пользователя' });
-      } else if (err.name === 'UserNotFoundError') {
-        res.status(NOT_FOUND_ERROR).send({ messsage: err.message });
-      } else {
-        res.status(DEFAULT_ERROR).send({ message: 'Произошла ошибка' });
-      }
-    });
+    .catch(next);
 };
 // -----------------------------------------------------------------------------------
 // аутентификация
-export const login = (req: Request, res: Response) => {
+export const login = (req: Request, res: Response, next: NextFunction) => {
   const { email, password } = req.body;
   return user
     .findUserByCredentials(email, password)
@@ -155,10 +126,7 @@ export const login = (req: Request, res: Response) => {
       // можно и так передать, записать JWT в httpOnly куку
       // res.cookie('jwt', token, { maxAge: 3600000 * 24 * 7, httpOnly: true });
     })
-    .catch((err) => {
-      // ошибка аутентификации
-      res.status(401).send({ message: err.message });
-    });
+    .catch(next);
 };
 // -----------------------------------------------------------------------------------
 // возвращает информацию о текущем пользователе
@@ -170,7 +138,12 @@ export const getCurrentUser = (
   user
     .findOne({ _id: req.user })
     .then((users) => {
-      res.send({ data: users });
+      if (!users) {
+        // если такого пользователя нет,
+        // сгенерируем исключение
+        throw new NotFoundError('Нет пользователя с таким id');
+      }
+      res.send(users);
     })
     .catch(next);
 };

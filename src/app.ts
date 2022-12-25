@@ -1,4 +1,4 @@
-import express from 'express';
+import express, { Request, Response } from 'express';
 import helmet from 'helmet';
 import rateLimit from 'express-rate-limit';
 import dotenv from 'dotenv';
@@ -47,6 +47,29 @@ app.use('/cards', cardsRoute);
 
 // подключаем логер ошибок
 app.use(errorLogger);
+
+type TError = Error & {
+  statusCode?: number;
+}
+
+// здесь обрабатываем все ошибки
+app.use((
+  err: TError,
+  req: Request,
+  res: Response,
+) => {
+  // если у ошибки нет статуса, выставляем 500
+  const { statusCode = 500, message } = err;
+
+  res
+    .status(statusCode)
+    .send({
+      // проверяем статус и выставляем сообщение в зависимости от него
+      message: statusCode === 500
+        ? 'На сервере произошла ошибка'
+        : message,
+    });
+});
 
 app.listen(PORT, () => {
   console.log('Сервер запущен');
