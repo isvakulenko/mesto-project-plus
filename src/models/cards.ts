@@ -1,5 +1,5 @@
 import { model, Schema } from 'mongoose';
-import { URLCheck } from '../utils/const';
+import validator from 'validator';
 
 interface ICard {
   name: string;
@@ -20,13 +20,11 @@ const cardSchema = new Schema<ICard>({
   link: {
     type: String, // Ссылка на картинку
     required: true,
-    maxlength: 200,
     validate: {
       validator(value: string) {
-        // Метод RegExp.test
-        return URLCheck.test(value);
+        return validator.isURL(value);
       },
-      message: 'Неправильный формат  URL', // выводится в случае false
+      message: 'Enter a valid URL', // выводится в случае false
     },
   },
   owner: {

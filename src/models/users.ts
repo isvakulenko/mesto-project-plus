@@ -2,7 +2,7 @@ import {
   model, Schema, Document, Model,
 } from 'mongoose';
 import bcrypt from 'bcryptjs';
-import { URLCheck, EMailCheck } from '../utils/const';
+import validator from 'validator';
 import UnauthorizedError from '../errors/unauthorized-error';
 
 interface IUser {
@@ -37,10 +37,9 @@ const userSchema = new Schema<IUser, UserModel>({
     type: String,
     validate: {
       validator(value: string) {
-        // Метод RegExp.test
-        return URLCheck.test(value);
+        return validator.isURL(value);
       },
-      message: 'Неправильный формат  URL', // выводится в случае false
+      message: 'Enter a valid URL', // выводится в случае false
     },
     default:
       'https://pictures.s3.yandex.net/resources/jacques-cousteau_1604399756.png',
@@ -51,9 +50,9 @@ const userSchema = new Schema<IUser, UserModel>({
     required: true,
     validate: {
       validator(value: string) {
-        return EMailCheck.test(value);
+        return validator.isEmail(value);
       },
-      message: 'Неправильный формат E-mail', // выводится в случае false
+      message: 'Enter a valid e-mail', // выводится в случае false
     },
   },
   password: {
