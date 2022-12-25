@@ -3,11 +3,13 @@ import helmet from 'helmet';
 import rateLimit from 'express-rate-limit';
 import dotenv from 'dotenv';
 import mongoose from 'mongoose';
+import { errors } from 'celebrate';
 import usersRoute from './routes/users';
 import cardsRoute from './routes/cards';
 import { createUser, login } from './controllers/users';
 import auth from './middlewares/auth';
 import { requestLogger, errorLogger } from './middlewares/logger';
+import { validateUserBody, validateAuthentication } from './middlewares/validators';
 
 const app = express();
 
@@ -37,8 +39,8 @@ mongoose.connect(DB_ADDRESS);
 // подключаем логер запросов
 app.use(requestLogger);
 
-app.post('/signin', login);
-app.post('/signup', createUser);
+app.post('/signin', validateAuthentication, login);
+app.post('/signup', validateUserBody, createUser);
 // авторизация
 app.use(auth);
 // роуты, которым авторизация нужна
@@ -47,6 +49,9 @@ app.use('/cards', cardsRoute);
 
 // подключаем логер ошибок
 app.use(errorLogger);
+
+// обработчик ошибок celebrate
+app.use(errors());
 
 type TError = Error & {
   statusCode?: number;
