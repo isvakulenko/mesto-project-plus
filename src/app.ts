@@ -22,8 +22,8 @@ const limiter = rateLimit({
   max: 100, // можно совершить максимум 100 запросов с одного IP
 });
 
-// Apply the rate limiting middleware to all requests
-app.use(limiter);
+// подключаем логер запросов
+app.use(requestLogger);
 
 // Заголовки безопасности Content-Security-Policy
 // можно проставлять автоматически — для этого есть модуль Helmet.
@@ -37,8 +37,8 @@ app.use(express.urlencoded({ extended: true }));
 // подключаемся к серверу MongoDB
 mongoose.connect(DB_ADDRESS);
 
-// подключаем логер запросов
-app.use(requestLogger);
+// Apply the rate limiting middleware to all requests
+app.use(limiter);
 
 app.post('/signin', validateAuthentication, login);
 app.post('/signup', validateUserBody, createUser);
