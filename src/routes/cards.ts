@@ -6,7 +6,7 @@ import {
   likeCard,
   dislikeCard,
 } from '../controllers/cards';
-import { validateCardBody } from '../middlewares/validators';
+import { validateCardBody, validateCardId } from '../middlewares/validators';
 
 const router = Router();
 
@@ -17,8 +17,8 @@ router.post('/', validateCardBody, createCard);
 // удаляет карточку по идентификатору _id
 router.delete('/:cardId', deleteCardById);
 // поставить лайк карточке
-router.put('/:cardId/likes', likeCard);
+router.put('/:cardId/likes', validateCardId, likeCard);
 // убрать лайк с карточки
-router.delete('/:cardId/likes', dislikeCard);
+router.delete('/:cardId/likes', validateCardId, dislikeCard);
 
 export default router;
