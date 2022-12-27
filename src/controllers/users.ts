@@ -49,6 +49,7 @@ export const getUserById = (
 export const createUser = (req: Request, res: Response, next: NextFunction) => {
   // вытащили нужные поля из POST-запроса
   const {
+    // eslint-disable-next-line no-unused-vars
     name, about, avatar, email, password,
   } = req.body;
   // передали их объектом в create метод модели
@@ -61,11 +62,20 @@ export const createUser = (req: Request, res: Response, next: NextFunction) => {
       about,
       avatar,
     }) // в случае успеха в user лежит новосозданный в БД объект
-    .then((users) => res.status(201).send({ data: users }))
+    .then((users) => res.status(201).send({
+      data: {
+        name: users.name,
+        about: users.about,
+        avatar: users.avatar,
+        email: users.email,
+        _id: users._id,
+      },
+    }))
     .catch((err) => {
       // любая ошибка, нужно понять какая, и правильно ответить на фронт
       if (err.name === 'ValidationError') {
         next(new InvalidRequestError(err.message));
+      // eslint-disable-next-line brace-style
       }
       // пользователь пытается зарегистрироваться по уже существующему в базе email
       else if (err.code === 11000) {
