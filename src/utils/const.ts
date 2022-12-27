@@ -1,5 +1,6 @@
 // Для проверки коррректности введенного URL для аватара
 // https://www.freecodecamp.org/news/check-if-a-javascript-string-is-a-url/
+// eslint-disable-next-line no-useless-escape
 export const URLCheck: RegExp = /(?:https?):\/\/(\w+:?\w*)?(\S+)(:\d+)?(\/|\/([\w#!:.?+=&%!\-\/]))?/;
 // Для проверки коррректности введенного EMail
 // https://regex101.com/r/mX1xW0/1

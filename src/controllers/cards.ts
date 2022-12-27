@@ -54,6 +54,7 @@ export const deleteCardById = (
         // объект вида ObjectId('6398acce83ff12ee373db5e6'), приводится к строке
         next(new ForbiddenError('Нельзя удалить чужую карточку'));
       } else {
+        // eslint-disable-next-line no-shadow
         card.findByIdAndRemove(id).then((cards) => res.send({ data: cards }));
       }
     })
@@ -104,7 +105,7 @@ export const dislikeCard = (
     .then((cards) => res.status(201).send({ data: cards }))
     .catch((err) => {
       if (err.name === 'CastError') {
-        next(new InvalidRequestError('Невалидный формат id карточки '));
+        next(new InvalidRequestError('Невалидный формат id карточки'));
       }
       next(err);
     });
